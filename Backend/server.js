@@ -11,8 +11,12 @@ const db = mysql.createConnection({
     host:'localhost',
     user:'root',
     password:'root',
-    database:'todo'
-})
+    database:'todo',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+
+});
 db.connect((err) => {
     if (err){
         console.log("DB CONNECTION FAIL")
