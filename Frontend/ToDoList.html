@@ -5,7 +5,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Simple To-Do App</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
   <style>
     body {
       background-color: #f9f9f9;
@@ -28,10 +30,6 @@
       border-bottom: 1px solid #eee;
     }
 
-    .todo-item:last-child {
-      border-bottom: none;
-    }
-
     .todo-actions button {
       margin-left: 5px;
     }
@@ -46,100 +44,125 @@
 
   <div class="todo-container">
     <h3 class="text-center mb-4">To-Do List</h3>
+
     <div class="input-group mb-3">
       <input id="todo-input" type="text" class="form-control" placeholder="Enter a task" />
       <button class="btn btn-primary" onclick="addTodo()">Add</button>
     </div>
+
     <ul id="todo-list" class="list-unstyled"></ul>
   </div>
 
-
   <script>
+    const API_URL = "http://localhost:3000";
     let todos = [];
-    document.addEventListener('DOMContentLoaded',async () =>{
-        let data = await fetch('http://localhost:3000', {
-            method:'GET',
-            headers: { 'Content-Type': 'application/Json'},
-        })
-        let originalformat = await data.json();
-        console.log(originalformat)
-         originalformat.map(item => {
-        todos.push({ ID:item.ID,
-            text:item.itemDescription,
-            editing:false
-        })
-        return todos
+
+    const list = document.getElementById("todo-list");
+
+    // Load todos
+    document.addEventListener("DOMContentLoaded", async () => {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+
+      todos = data.map(item => ({
+        id: item.id,
+        text: item.itemdescription,
+        editing: false
+      }));
+
+      renderTodos();
     });
-    
-    renderTodos();
-    })
 
-   
-
+    // Render todos
     function renderTodos() {
-      const list = document.getElementById('todo-list');
-      list.innerHTML = '';
-      todos.forEach((todo, index) => {
-        const li = document.createElement('li');
-        li.className = 'todo-item';
+      list.innerHTML = "";
+
+      todos.forEach(todo => {
+        const li = document.createElement("li");
+        li.className = "todo-item";
+
         if (todo.editing) {
           li.innerHTML = `
-            <input class="form-control edit-input" type="text" value="${todo.text}" onkeyup="updateTodo(event, ${index})" />
+            <input class="form-control edit-input" 
+              value="${todo.text}"
+              onkeyup="handleEdit(event, ${todo.id})"
+            />
             <div class="todo-actions">
-              <button class="btn btn-success btn-sm" onclick="saveTodo(${todo.ID})">Save</button>
+              <button class="btn btn-success btn-sm" onclick="saveTodo(${todo.id})">Save</button>
             </div>
           `;
         } else {
           li.innerHTML = `
             <span>${todo.text}</span>
             <div class="todo-actions">
-              <button class="btn btn-sm btn-warning" onclick="editTodo(${index})">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="deleteTodo(${todo.text})">Delete</button>
+              <button class="btn btn-warning btn-sm" onclick="editTodo(${todo.id})">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteTodo(${todo.id})">Delete</button>
             </div>
           `;
         }
+
         list.appendChild(li);
       });
     }
 
-    function addTodo() {
-        let value = document.getElementById("todo-input");
-        let text = value.value;
-        console.log(text)
-        fetch('http://localhost:3000/add-item',{
-            method:'POST',
-            headers: { 'Content-Type': 'application/Json'},
-            body: JSON.stringify({text})
-        })
-        window.location.reload();
+    // Add todo
+    async function addTodo() {
+      const input = document.getElementById("todo-input");
+      const text = input.value.trim();
+
+      if (!text) return;
+
+      await fetch(`${API_URL}/add-item`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      input.value = "";
+      location.reload();
     }
 
-    function deleteTodo(value) {
-      console.log(value.value)
-      fetch('http://localhost:3000/delete/:id', {
-        method:'DELETE',
-        headers: { 'Content-Type': 'application/Json'},
-        body: JSON.stringify({index})
+    // Delete todo
+    async function deleteTodo(id) {
+      await fetch(`${API_URL}/delete/${id}`, {
+        method: "DELETE"
+      });
 
-      })
-      window.location.reload();
+      location.reload();
     }
 
-    function editTodo(index) {
-      todos[index].editing = true;
+    // Edit mode
+    function editTodo(id) {
+      todos = todos.map(todo =>
+        todo.id === id ? { ...todo, editing: true } : todo
+      );
       renderTodos();
     }
 
-    function saveTodo(ID) {
-      fetch('http://localhost:3000/edit-item',{
-            method:'PUT',
-            headers: { 'Content-Type': 'application/json'},
-            body: JSON.stringify({ID:26,itemDescription:todo.text})
-      })
-      window.location.reload();
-      
+    // Track input while editing
+    function handleEdit(e, id) {
+      todos = todos.map(todo =>
+        todo.id === id ? { ...todo, text: e.target.value } : todo
+      );
+    }
+
+    // Save edited todo
+    async function saveTodo(id) {
+      const todo = todos.find(t => t.id === id);
+
+      await fetch(`${API_URL}/edit-item`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ID: id,
+          itemdescription: todo.text
+        })
+      });
+
+      location.reload();
     }
   </script>
+
 </body>
 
 </html>

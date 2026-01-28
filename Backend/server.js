@@ -1,84 +1,96 @@
-const express = require('express');
-const cors = require('cors');
-const mysql = require('mysql2');
-const app = express()
+import dotenv from "dotenv";
+import express from "express";
+import cors from "cors";
+import { createClient } from "@supabase/supabase-js";
 
+dotenv.config();
+
+const app = express();
 app.use(cors());
 app.use(express.json());
 
-//Database connection
-const db = mysql.createConnection({
-    host:'localhost',
-    user:'root',
-    password:'root',
-    database:'todo',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+// Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
+// Health check
+app.get("/health", (req, res) => {
+  res.send("Server is running");
 });
-db.connect((err) => {
-    if (err){
-        console.log("DB CONNECTION FAIL")
-        return
-    } 
-    console.log("db connection sucessfull")
 
-})
+// ✅ Get all todos
+app.get("/", async (req, res) => {
+  const { data, error } = await supabase
+    .from("todoitems")
+    .select("*")
+    .order("id", { ascending: false });
 
-//Reterving of tasks from data base
-app.get('/',(req,res) => {
-    db.query('select * from todoitems',(err,results) =>{
-        if(err) {
-            console.log("error occured",err)
-            return
-        }
-        console.log("data fatched sucessfully",results)
-        res.send(results)
-    })
-})
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: error.message });
+  }
 
-//Storing the tasks in data base
-app.post('/add-item',(req,res) => {
-    console.log(req.body);
-    db.query(`insert into todoitems(itemDescription) values('${req.body.text}')`,(err,results) =>{
-        if(err) {
-            console.log("error occured",err)
-            return
-        }
-        console.log("created sucessfully")
-    })
-    res.send("added sucessfully")
-})
+  res.json(data);
+});
 
-//Editing task
-app.put('/edit-item',(req,res) => {
-    console.log("line 52",req.body)
-    db.query(`UPDATE todoitems 
-SET itemDescription = '${req.body.itemDescription}'
-WHERE id = ${req.body.ID};`,(err,result) => {
-    if(err) {
-            console.log("error occured",err)
-            return
-        }
-        console.log("edited sucessfully")
-    })
-})
+// ✅ Add a todo
+app.post("/add-item", async (req, res) => {
+  const { text } = req.body;
 
-//task deletion from database
-app.delete('/delete/:id',(req,res) => {
-    console.log(req.body)
-    db.query(`DELETE FROM todoitems WHERE id = '${req.body.value}'`,(err,result) => {
-        if(err) {
-            console.log("error is :",err)
-            return
-        }
-        res.send("Task deleted")
-        console.log("deleted task")
-    })
-})
+  if (!text || text.length < 3) {
+    return res.status(400).json({ error: "Text is too short" });
+  }
 
-//Server SetUp
-app.listen(3000,()=>{
-    console.log("Server is running");
-})
+  const { error } = await supabase
+    .from("todoitems")
+    .insert([{ itemdescription: text }]);
+
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.send("Added successfully");
+});
+
+// ✅ Edit a todo
+app.put("/edit-item", async (req, res) => {
+  const { ID, itemdescription } = req.body;
+
+  const { error } = await supabase
+    .from("todoitems")
+    .update({ itemdescription })
+    .eq("id", ID);
+
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.send("Updated successfully");
+});
+
+// ✅ Delete a todo
+app.delete("/delete/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const { error } = await supabase
+    .from("todoitems")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.send("Deleted successfully");
+});
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
