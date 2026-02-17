@@ -54,7 +54,7 @@
     </div>
 
     <script>
-        const API_URL = "https://to-do-app-fue4.onrender.com";
+        const API_URL = "http://localhost:3000/";
         let todos = [];
 
         const list = document.getElementById("todo-list");
@@ -64,9 +64,10 @@
             const res = await fetch(API_URL);
             const data = await res.json();
 
-            todos = data.map(item => ({
-                id: item.id,
-                text: item.itemdescription,
+            //store tasks in todos using map function
+            todos = data.payload.map(item => ({
+                id: item._id,
+                text: item.task,
                 editing: false
             }));
 
@@ -83,53 +84,79 @@
 
                 if (todo.editing) {
                     li.innerHTML = `
-            <input class="form-control edit-input" 
-              value="${todo.text}"
-              onkeyup="handleEdit(event, ${todo.id})"
-            />
-            <div class="todo-actions">
-              <button class="btn btn-success btn-sm" onclick="saveTodo(${todo.id})">Save</button>
-            </div>
-          `;
+                <input 
+                  class="form-control edit-input"
+                  value="${todo.text}"
+                  onkeyup="handleEdit(event, '${todo.id}')"
+                />
+                <div class="todo-actions">
+                  <button 
+                    class="btn btn-success btn-sm"
+                    onclick="saveTodo('${todo.id}')">
+                    Save
+                  </button>
+                </div>
+            `;
                 } else {
                     li.innerHTML = `
-            <span>${todo.text}</span>
-            <div class="todo-actions">
-              <button class="btn btn-warning btn-sm" onclick="editTodo(${todo.id})">Edit</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteTodo(${todo.id})">Delete</button>
-            </div>
-          `;
+                <span>${todo.text}</span>
+                <div class="todo-actions">
+                  <button 
+                    class="btn btn-warning btn-sm"
+                    onclick="editTodo('${todo.id}')">
+                    Edit
+                  </button>
+                  <button 
+                    class="btn btn-danger btn-sm"
+                    onclick="deleteTodo('${todo.id}')">
+                    Delete
+                  </button>
+                </div>
+            `;
                 }
 
                 list.appendChild(li);
             });
         }
 
+
         // Add todo
         async function addTodo() {
             const input = document.getElementById("todo-input");
-            const text = input.value.trim();
+            const task = input.value.trim();
 
-            if (!text) return;
+            if (!task) return;
+            console.log(task)
 
-            await fetch(`${API_URL}/add-item`, {
+            await fetch(`${API_URL}add-tasks`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text })
+                body: JSON.stringify({ task })
             });
 
             input.value = "";
-            location.reload();
+            //location.reload();
         }
 
         // Delete todo
         async function deleteTodo(id) {
-            await fetch(`${API_URL}/delete/${id}`, {
-                method: "DELETE"
-            });
+            try {
+                const res = await fetch(`${API_URL}delete-task/${id}`, {
+                    method: "DELETE"
+                });
 
-            location.reload();
+                const data = await res.json();
+                console.log("Delete response:", data);
+
+                if (res.ok) {
+                    todos = todos.filter(todo => todo.id !== id);
+                    renderTodos();
+                }
+            } catch (err) {
+                console.error("Delete failed:", err);
+            }
         }
+
 
         // Edit mode
         function editTodo(id) {
@@ -150,12 +177,11 @@
         async function saveTodo(id) {
             const todo = todos.find(t => t.id === id);
 
-            await fetch(`${API_URL}/edit-item`, {
+            await fetch(`${API_URL}edit-item/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    ID: id,
-                    itemdescription: todo.text
+                    editedTask: todo.text
                 })
             });
 

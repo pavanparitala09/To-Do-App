@@ -1,0 +1,22 @@
+post http://localhost:3000/add-tasks
+Content-Type: application/json
+
+{
+    "task":"task example"
+}
+
+
+###get all the tasks
+GET http://localhost:3000/
+
+###update task
+post http://localhost:3000/edit-task/699487579574ebb8ec403d25
+Content-Type: application/json
+
+{
+    "editedtask":"edited 2nd"
+}
+
+
+### delete the task
+DELETE http://localhost:3000/delete-task/699487579574ebb8ec403d25
