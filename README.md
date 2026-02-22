@@ -40,5 +40,3 @@ The project supports complete **CRUD operations** and demonstrates real-world ba
 
 ---
 
-## 📁 Project Structure
-
