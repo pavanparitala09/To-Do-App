@@ -16,7 +16,7 @@ router.post("/add-tasks", async (req, res) => {
   try {
     //get task details from body
     let task = req.body.task;
-    console.log(task)
+    console.log(task);
 
     //create a task model
     const newtask = await taskModel({ task });
@@ -36,12 +36,16 @@ router.put("/edit-task/:id", async (req, res) => {
   let taskId = req.params.id;
 
   //get updated task from body
-  let task = req.body.editedTask;
+  let taskbody = req.body.editedtask;
 
   //edit task if it exist in db
-  let updatedTask = await taskModel.findByIdAndUpdate(taskId, {
-    $set: { task: task },
-  });
+  let updatedTask = await taskModel.findByIdAndUpdate(
+    taskId,
+    {
+      $set: { task: taskbody },
+    },
+    { new: true },
+  );
 
   //if task does not exist
   if (!updatedTask) res.status(404).json({ message: "task does not exis" });

@@ -3,8 +3,7 @@ import express from "express";
 import cors from "cors";
 import { createClient } from "@supabase/supabase-js";
 import { router } from "./APIs/RestFullApis.js";
-import {connect} from 'mongoose'
-
+import { connect } from "mongoose";
 
 dotenv.config();
 const app = express();
@@ -26,7 +25,7 @@ const connectdb = async () => {
       console.log("Server is running on", process.env.PORT);
     });
   } catch (err) {
-    console.log("error occured during db connection :", err);
+    console.log("error occured during db connection :", err.message);
   }
 };
 //call the function

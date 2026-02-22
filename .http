@@ -2,7 +2,7 @@ post http://localhost:3000/add-tasks
 Content-Type: application/json
 
 {
-    "task":"task example"
+    "task":"task 1 by pavan"
 }
 
 
@@ -10,13 +10,13 @@ Content-Type: application/json
 GET http://localhost:3000/
 
 ###update task
-post http://localhost:3000/edit-task/699487579574ebb8ec403d25
+PUT http://localhost:3000/edit-task/699b26126eed5bf21a0398ab
 Content-Type: application/json
 
 {
-    "editedtask":"edited 2nd"
+    "editedtask":"edited task 3nd time"
 }
 
 
 ### delete the task
-DELETE http://localhost:3000/delete-task/699487579574ebb8ec403d25
+DELETE http://localhost:3000/delete-task/699b28b86108ffae90190ee8
